@@ -48,9 +48,10 @@ def xor_hex_string(a, b):
 
 # Takes a hex string and binary key
 # Returns hex-represented encrypted data
-def cbc_encrypt(key, hex):
+def cbc_encrypt(key, hex, iv=""):
     result = ""
-    iv = get_hex_iv()
+    if iv == "":
+        iv = get_hex_iv()
     result += iv
 
     hex += 'ff'
@@ -77,8 +78,43 @@ def cbc_decrypt(key, hex):
     result = result[:result.rfind('ff')]
     return binascii.unhexlify(result)
 
-
 if __name__ == "__main__":
+    input = ""
+    output = ""
+    keyfile=""
+
+    for a in range(1,len(sys.argv)):
+        if sys.argv[a] == "-k":
+            keyfile = sys.argv[a+1]
+        if sys.argv[a] == "-v":
+            ivfile = sys.argv[a+1]
+            checkiv =1
+        if sys.argv[a]=="-o":
+            output=sys.argv[a+1]
+        if sys.argv[a] == "-i":
+            input = sys.argv[a + 1]
+
+    infile=open(input,"r")
+    hex_data= infile.read()
+    infile.close()
+    outfile=open(output,"w")
+    keyring=open(keyfile,"r")
+    key= keyring.read()
+
+    if checkiv:
+        ivhold=open(ivfile,"r")
+        iv=ivhold.read()
+
+    else:
+        iv = get_hex_iv()
+
+    last_block=iv
+    answer = cbc_encrypt(key, hex_data, iv)
+
+    outfile.write(answer)
+
+
+if False and __name__ == "__main__":
     key = bytes("1234567890abcdef1234567890abcdef", encoding='utf-8')
     hex_data = binascii.hexlify(bytes("1234567890abcdef1234567890abcdef1234567890abcdefpoi", encoding='utf-8')).decode('utf-8')
     ct = encrypt(key, "1234567890abcdef")

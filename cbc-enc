@@ -1,4 +1,4 @@
 #!/bin/sh
 
-python main.py
+python3.5 main.py
 
