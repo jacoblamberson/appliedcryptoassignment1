@@ -1,7 +1,56 @@
 import binascii
 from multiprocessing import Process
+from multiprocessing import Pool
 from Crypto.Cipher import AES
 import os, random, sys
+from binascii import unhexlify
+
+
+def long_to_bytes (val, endianness='big'):
+    """
+    Use :ref:`string formatting` and :func:`~binascii.unhexlify` to
+    convert ``val``, a :func:`long`, to a byte :func:`str`.
+
+    :param long val: The value to pack
+
+    :param str endianness: The endianness of the result. ``'big'`` for
+      big-endian, ``'little'`` for little-endian.
+
+    If you want byte- and word-ordering to differ, you're on your own.
+
+    Using :ref:`string formatting` lets us use Python's C innards.
+    """
+
+    # one (1) hex digit per four (4) bits
+    width = val.bit_length()
+
+    # unhexlify wants an even multiple of eight (8) bits, but we don't
+    # want more digits than we need (hence the ternary-ish 'or')
+    width += 8 - ((width % 8) or 8)
+
+    # format width specifier: four (4) bits per hex digit
+    fmt = '%%0%dx' % (width // 4)
+
+    # prepend zero (0) to the width, to zero-pad the output
+    s = unhexlify(fmt % val)
+
+    if endianness == 'little':
+        # see http://stackoverflow.com/a/931095/309233
+        s = s[::-1]
+
+    return s
+
+
+def get_incremented_iv(iv, increment):
+    counter = int.from_bytes(binascii.unhexlify(iv), byteorder='big')
+    counter += increment
+    res = long_to_bytes(counter)
+    hex_res = binascii.hexlify(res).decode('utf-8')
+    while len(hex_res) < 16:
+        hex_res = '0' + hex_res
+    return hex_res
+
+
 
 def xor_hex_string(a, b):
     c, d = binascii.unhexlify(a), binascii.unhexlify(b)
@@ -88,13 +137,13 @@ if __name__ == "__main__":
 
     last_block=iv
     deanswer=""
-    count=1
-    print(iv)
-    print(iv+1)
-    pool = ThreadPool(processes = 4)
+    #count=1
+    #print(iv)
+    #print(iv+1)
+    pool = Pool(processes = 4)
 
     for i in range(0, len(hex_data), 32):
-        p = pool.apply_async(ctr_decrypt,(key,hex_data[i:i+32],iv+count))
+        p = pool.apply_async(ctr_decrypt,(key,hex_data[i:i+32],get_incremented_iv(iv, i)))
         deanswer += p.get()
 
     outfile.write(deanswer)
