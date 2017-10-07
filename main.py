@@ -1,6 +1,6 @@
 import binascii
 from Crypto.Cipher import AES
-import os
+import os, sys
 
 
 # Credit to Chris Coe for this code
@@ -47,7 +47,7 @@ def xor_hex_string(a, b):
 
 
 # Takes a hex string and binary key
-# Returns hex-represented encrypted data
+# Returns binary encrypted data
 def cbc_encrypt(key, hex, iv=""):
     result = ""
     if iv == "":
@@ -63,7 +63,7 @@ def cbc_encrypt(key, hex, iv=""):
         before_enc = xor_hex_string(last_block, hex[i:i+32])
         last_block = encrypt(key, binascii.unhexlify(before_enc))
         result += last_block
-    return result
+    return binascii.unhexlify(result)
 
 # Returns binary result
 def cbc_decrypt(key, hex):
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     input = ""
     output = ""
     keyfile=""
+    checkiv=0
 
     for a in range(1,len(sys.argv)):
         if sys.argv[a] == "-k":
@@ -93,23 +94,30 @@ if __name__ == "__main__":
             output=sys.argv[a+1]
         if sys.argv[a] == "-i":
             input = sys.argv[a + 1]
+        if sys.argv[a] == "-f":
+            function = sys.argv[a+1]
 
-    infile=open(input,"r")
-    hex_data= infile.read()
+    infile=open(input,"rb")
+    data= infile.read()
+    hex_data = binascii.hexlify(data).decode('utf-8')
     infile.close()
-    outfile=open(output,"w")
+    outfile=open(output,"wb")
     keyring=open(keyfile,"r")
-    key= keyring.read()
+    key= binascii.unhexlify(keyring.read())
 
     if checkiv:
-        ivhold=open(ivfile,"r")
+        ivhold=open(ivfile,"rb")
         iv=ivhold.read()
 
     else:
         iv = get_hex_iv()
 
     last_block=iv
-    answer = cbc_encrypt(key, hex_data, iv)
+
+    if function == "encrypt":
+        answer = cbc_encrypt(key, hex_data, iv)
+    elif function == "decrypt":
+        answer = cbc_decrypt(key, hex_data)
 
     outfile.write(answer)
 

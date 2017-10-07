@@ -1,7 +1,7 @@
 import binascii
 from multiprocessing import Process
 from Crypto.Cipher import AES
-import os, random
+import os, random, sys
 
 def xor_hex_string(a, b):
     c, d = binascii.unhexlify(a), binascii.unhexlify(b)
