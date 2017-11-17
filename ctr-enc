@@ -1,0 +1,4 @@
+#!/bin/sh
+
+python ctr.py -f encrypt $@
+
